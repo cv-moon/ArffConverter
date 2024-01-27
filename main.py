@@ -1,8 +1,7 @@
 # #---------------Código para convertir a arff un csv y también delimitar a utf-8-----------------
 # import csv
-import openpyxl
-import pandas
 import pandas as pd
+import psycopg2
 
 # import unidecode
 # import datetime
@@ -37,7 +36,6 @@ import pandas as pd
 
 # # -----------------------Código para insertar a base de datos.
 #
-import psycopg2
 
 # Conectarse a la base de datos
 connection = psycopg2.connect(
@@ -65,49 +63,49 @@ connection = psycopg2.connect(
 # -----------------------Código para leer excel.
 ruta_archivo = "Excel/PERIODO 2021 - 1.xlsx"
 df = pd.read_excel(ruta_archivo, dtype={"IDENTIFICACIÓN": "str", "FIJO": "str", "MOVIL": "str"})
-# # print(df.head())
-# # Ete código valida la existencia de carreras en la base y si no existen registradas, las registra.
-# columna_genero = df["CARRERA"]
-# genero_unicos = columna_genero.unique()
+# print(df.head())
+# Ete código valida la existencia de carreras en la base y si no existen registradas, las registra.
+columna_genero = df["CARRERA"]
+genero_unicos = columna_genero.unique()
 cursor = connection.cursor()
-# cursor.execute("SELECT * FROM carreras")
-# genero_db = [fila[1] for fila in cursor.fetchall()]
-# for dato in genero_unicos:
-#     if dato not in genero_db:
-#         sql = """
-#                     INSERT INTO carreras (car_nombre)
-#                     VALUES (%s)
-#                 """
-#         cursor.execute(sql, (dato,))
-# connection.commit()
-#
-# # En este código también se realizará la verificación e inserción de datos de no exister en torno a las modalidades
-# columna_genero = df["MODALIDAD"]
-# genero_unicos = columna_genero.unique()
-# cursor.execute("SELECT * FROM modalidades")
-# genero_db = [fila[1] for fila in cursor.fetchall()]
-# for dato in genero_unicos:
-#     if dato not in genero_db:
-#         sql = """
-#                     INSERT INTO modalidades (mod_nombre)
-#                     VALUES (%s)
-#                 """
-#         cursor.execute(sql, (dato,))
-# connection.commit()
-#
-# # En este código también se realizará la verificación e inserción de datos de no exister en torno al género
-# columna_genero = df["GÉNERO"]
-# genero_unicos = columna_genero.unique()
-# cursor.execute("SELECT * FROM generos")
-# genero_db = [fila[1] for fila in cursor.fetchall()]
-# for dato in genero_unicos:
-#     if dato not in genero_db:
-#         sql = """
-#                     INSERT INTO generos (gen_nombre)
-#                     VALUES (%s)
-#                 """
-#         cursor.execute(sql, (dato,))
-# connection.commit()
+cursor.execute("SELECT * FROM carreras")
+genero_db = [fila[1] for fila in cursor.fetchall()]
+for dato in genero_unicos:
+    if dato not in genero_db:
+        sql = """
+                    INSERT INTO carreras (car_nombre)
+                    VALUES (%s)
+                """
+        cursor.execute(sql, (dato,))
+connection.commit()
+
+# En este código también se realizará la verificación e inserción de datos de no exister en torno a las modalidades
+columna_genero = df["MODALIDAD"]
+genero_unicos = columna_genero.unique()
+cursor.execute("SELECT * FROM modalidades")
+genero_db = [fila[1] for fila in cursor.fetchall()]
+for dato in genero_unicos:
+    if dato not in genero_db:
+        sql = """
+                    INSERT INTO modalidades (mod_nombre)
+                    VALUES (%s)
+                """
+        cursor.execute(sql, (dato,))
+connection.commit()
+
+# En este código también se realizará la verificación e inserción de datos de no exister en torno al género
+columna_genero = df["GÉNERO"]
+genero_unicos = columna_genero.unique()
+cursor.execute("SELECT * FROM generos")
+genero_db = [fila[1] for fila in cursor.fetchall()]
+for dato in genero_unicos:
+    if dato not in genero_db:
+        sql = """
+                    INSERT INTO generos (gen_nombre)
+                    VALUES (%s)
+                """
+        cursor.execute(sql, (dato,))
+connection.commit()
 
 for fila in df.itertuples():
     # print(fila)
@@ -152,31 +150,33 @@ for fila in df.itertuples():
         discapacidad = False
     cursor.execute(sql, (fila.NOMBRES, fila.APELLIDOS, fila.IDENTIFICACIÓN, fila._13, fila._20, fila.FIJO, fila.MOVIL,
                          fila._27, discapacidad, id_genero,))
-    connection.commit()
 
-    sql = """
-                SELECT id_estudiante
-                FROM estudiantes
-            """
-    cursor.execute(sql, (columna_carrera,))
-    id_estudiante = cursor.fetchone()[-1]
-    # id_estudiante = cursor.lastrowid + 1
+    print(cursor.)
 
-    sql = """
-           INSERT INTO matriculas (id_estudiante, id_periodo, id_carrera, id_modalidad, num_matricula, fecha_inscripcion,
-           formalizado, retirado)
-           VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-       """
-    if fila.FORMALIZADO == "SI":
-        formalizado = True
-    else:
-        formalizado = False
-
-    if fila.RETIRADO == "SI":
-        retirado = True
-    else:
-        retirado = False
-    cursor.execute(sql, (id_estudiante, 1, id_carrera, id_modalidad, fila.MATRICULA, fila._21, formalizado,
-                         retirado,))
-
-connection.commit()
+#     sql = """
+#                 SELECT id_estudiante
+#                 FROM estudiantes
+#                 WHERE id_estudiante = %s
+#             """
+#     cursor.execute(sql, (id_estudiante,))
+#     id_estudiante = cursor.fetchone()
+#     print(id_estudiante)
+#
+#     sql = """
+#            INSERT INTO matriculas (id_estudiante, id_periodo, id_carrera, id_modalidad, num_matricula, fecha_inscripcion,
+#            formalizado, retirado)
+#            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+#        """
+#     if fila.FORMALIZADO == "SI":
+#         formalizado = True
+#     else:
+#         formalizado = False
+#
+#     if fila.RETIRADO == "SI":
+#         retirado = True
+#     else:
+#         retirado = False
+#     cursor.execute(sql, (id_estudiante, 1, id_carrera, id_modalidad, fila.MATRICULA, fila._21, formalizado,
+#                          retirado,))
+#
+# connection.commit()
