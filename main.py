@@ -44,24 +44,9 @@ connection = psycopg2.connect(
     user="postgres",
     password="CVsql2024"
 )
-#
-# # Ejecutar una consulta SQL
-# cursor = connection.cursor()
-#
-# cursor.execute("INSERT INTO usuarios (nombre, clave) VALUES ('Paola', 'test2024')")
-# cursor.execute("INSERT INTO usuarios (nombre, clave) VALUES ('Pamela', 'test2024')")
-# connection.commit()
-# # cursor.execute("SELECT * FROM usuarios")
-# # #
-# # # Imprimir los resultados
-# # for row in cursor:
-# #     print(row)
-#
-# # Cerrar la conexión
-# connection.close()
 
 # -----------------------Código para leer excel.
-ruta_archivo = "Excel/PERIODO 2021 - 1.xlsx"
+ruta_archivo = "Excel/PERIODO 2023 - 1.xlsx"
 df = pd.read_excel(ruta_archivo, dtype={"IDENTIFICACIÓN": "str", "FIJO": "str", "MOVIL": "str"})
 # print(df.head())
 # Ete código valida la existencia de carreras en la base y si no existen registradas, las registra.
@@ -137,46 +122,54 @@ for fila in df.itertuples():
     cursor.execute(sql, (columna_carrera,))
     id_carrera = cursor.fetchone()[0]
 
-    # print(f"{fila.NOMBRES}, {id_modalidad}, {id_genero}")
-    # Registrar el ID en la otra tabla
+    columna_identificacion = fila.IDENTIFICACIÓN
+    columna_nombres = fila.NOMBRES
+    columna_APELLIDOS = fila.APELLIDOS
     sql = """
-        INSERT INTO estudiantes (nombres, apellidos, num_identificacion, fecha_nacimiento, sector_residencia, telefono_fijo,
-        telefono_celular, email_personal, discapacidad, id_genero)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """
-    if fila.DISCAPCIDAD == "SI":
-        discapacidad = True
+            SELECT id_estudiante, nombres
+            FROM estudiantes
+            WHERE nombres = %s
+            AND apellidos = %s
+            AND num_identificacion = %s
+        """
+    cursor.execute(sql, (columna_nombres, columna_APELLIDOS, str(columna_identificacion),))
+    estudiante = cursor.fetchone()
+    if not estudiante:
+        sql = """
+            INSERT INTO estudiantes (nombres, apellidos, num_identificacion, fecha_nacimiento, sector_residencia, telefono_fijo,
+            telefono_celular, email_personal, discapacidad, id_genero)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+        if fila.DISCAPCIDAD == "SI":
+            discapacidad = True
+        else:
+            discapacidad = False
+        cursor.execute(sql, (fila.NOMBRES, fila.APELLIDOS, fila.IDENTIFICACIÓN, fila._13, fila._20, fila.FIJO, fila.MOVIL,
+                             fila._27, discapacidad, id_genero,))
+
+        connection.commit()
+        cursor.execute("SELECT id_estudiante FROM estudiantes ORDER BY id_estudiante DESC;")
+        id_estudiante = cursor.fetchone()[0]
+        print(f"{id_estudiante} - nuevo")
     else:
-        discapacidad = False
-    cursor.execute(sql, (fila.NOMBRES, fila.APELLIDOS, fila.IDENTIFICACIÓN, fila._13, fila._20, fila.FIJO, fila.MOVIL,
-                         fila._27, discapacidad, id_genero,))
+        id_estudiante = estudiante[0]
+        print(f"{id_estudiante} - anitguo")
 
-    print(cursor.)
+    sql = """
+           INSERT INTO matriculas (id_estudiante, id_periodo, id_carrera, id_modalidad, num_matricula, fecha_inscripcion,
+           formalizado, retirado, nivel)
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+       """
+    if fila.FORMALIZADO == "SI":
+        formalizado = True
+    else:
+        formalizado = False
 
-#     sql = """
-#                 SELECT id_estudiante
-#                 FROM estudiantes
-#                 WHERE id_estudiante = %s
-#             """
-#     cursor.execute(sql, (id_estudiante,))
-#     id_estudiante = cursor.fetchone()
-#     print(id_estudiante)
-#
-#     sql = """
-#            INSERT INTO matriculas (id_estudiante, id_periodo, id_carrera, id_modalidad, num_matricula, fecha_inscripcion,
-#            formalizado, retirado)
-#            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-#        """
-#     if fila.FORMALIZADO == "SI":
-#         formalizado = True
-#     else:
-#         formalizado = False
-#
-#     if fila.RETIRADO == "SI":
-#         retirado = True
-#     else:
-#         retirado = False
-#     cursor.execute(sql, (id_estudiante, 1, id_carrera, id_modalidad, fila.MATRICULA, fila._21, formalizado,
-#                          retirado,))
-#
-# connection.commit()
+    if fila.RETIRADO == "SI":
+        retirado = True
+    else:
+        retirado = False
+    cursor.execute(sql, (id_estudiante, 5, id_carrera, id_modalidad, fila.MATRICULA, fila._21, formalizado,
+                         retirado, fila.NIVEL,))
+
+    connection.commit()
